@@ -1,0 +1,20 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# build / production
+dist
+build
+coverage
+
+# misc
+.DS_Store
+*.log
+yarn.lock
+package-lock.json
+package.json
+
+# ignore docs
+README.md
+*.md
