@@ -1,5 +1,6 @@
-import { getDB } from '~/config/db.js'
 import { ObjectId } from 'mongodb'
+
+import { getDB } from '~/config/db.js'
 
 const COLLECTION_NAME = 'books'
 
@@ -102,7 +103,7 @@ class BookRepository {
           'inventory.total_copies': totalChange,
           'inventory.available_copies': availableChange
         },
-        $set: { update_at: new Date() }
+        $set: { updated_at: new Date() }
       }
     )
   }
@@ -115,7 +116,7 @@ class BookRepository {
       {
         $set: {
           _deleted: true,
-          update_at: new Date()
+          updated_at: new Date()
         }
       }
     )

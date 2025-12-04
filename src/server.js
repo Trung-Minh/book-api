@@ -1,9 +1,15 @@
-import express from 'express'
-import { connectDB, closeDB } from './config/db.js'
-import bookRoutes from './routes/book.route.js'
-import bookCopyRoutes from './routes/bookCopy.route.js'
-import dotenv from 'dotenv'
 import cors from 'cors'
+import dotenv from 'dotenv'
+import express from 'express'
+
+import bookRoutes from './routes/book.route.js'
+import loanRoutes from './routes/loan.route.js'
+import userRoutes from './routes/user.route.js'
+import readerRoutes from './routes/reader.route.js'
+import bookCopyRoutes from './routes/bookCopy.route.js'
+import librarianRoutes from './routes/librarian.route.js'
+
+import { connectDB, closeDB } from './config/db.js'
 
 dotenv.config()
 
@@ -23,7 +29,11 @@ app.use((req, res, next) => {
 
 // 2. Routes
 app.use('/api/v1/books', bookRoutes)
+app.use('/api/v1/loans', loanRoutes)
+app.use('/api/v1/users', userRoutes)
+app.use('/api/v1/readers', readerRoutes)
 app.use('/api/v1/book-copies', bookCopyRoutes)
+app.use('/api/v1/librarians', librarianRoutes)
 
 app.get('/', (req, res) => {
   res.json({ message: 'Server is running...' })

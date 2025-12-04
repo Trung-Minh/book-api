@@ -2,45 +2,48 @@ import { ObjectId } from 'mongodb'
 
 import { getDB } from '~/config/db.js'
 
-const COLLECTION_NAME = 'readers'
+const COLLECTION_NAME = 'users'
 
-class ReaderRepository {
+class UserRepository {
   getCollection() {
     return getDB().collection(COLLECTION_NAME)
   }
 
-  async create(readerData) {
+  async create(userData) {
     const doc = {
-      ...readerData,
-      metrics: {
-        current_loans: 0,
-        total_overdue: 0
-      },
+      username: userData.username,
+      password_hash: userData.password_hash,
+      full_name: userData.full_name,
+      role: userData.role,
+      status: userData.status,
       created_at: new Date(),
       updated_at: new Date(),
       _deleted: false
     }
+
     const result = await this.getCollection().insertOne(doc)
-    const { _deleted, ...ret } = doc
+
+    const { password_hash, _deleted, ...ret } = doc
     return { _id: result.insertedId, ...ret }
   }
 
-  async findByEmail(email) {
-    return await this.getCollection().findOne({ email })
+  async findByUsername(username) {
+    return await this.getCollection().findOne({
+      username,
+      _deleted: false
+    })
+  }
+
+  async findAnyByUsername(username) {
+    return await this.getCollection().findOne({ username })
   }
 
   async findById(id) {
     if (!ObjectId.isValid(id)) return null
     return await this.getCollection().findOne(
       { _id: new ObjectId(id), _deleted: false },
-      { projection: { _deleted: 0 } }
+      { projection: { password_hash: 0, _deleted: 0 } }
     )
-  }
-
-  async findAnyByCardNumber(cardNumber) {
-    return await this.getCollection().findOne({
-      'card.card_number': cardNumber
-    })
   }
 
   async findAll({ filter, page, limit, sort }) {
@@ -49,15 +52,24 @@ class ReaderRepository {
 
     const cursor = this.getCollection()
       .find(query)
-      .project({ _deleted: 0 })
+      .project({ password_hash: 0, _deleted: 0 })
       .sort(sort)
       .skip(skip)
       .limit(limit)
 
-    const readers = await cursor.toArray()
+    const users = await cursor.toArray()
     const total = await this.getCollection().countDocuments(query)
 
-    return { readers, total }
+    return { users, total }
+  }
+
+  async update(id, updateData) {
+    if (!ObjectId.isValid(id)) return null
+    return await this.getCollection().findOneAndUpdate(
+      { _id: new ObjectId(id), _deleted: false },
+      { $set: { ...updateData, updated_at: new Date() } },
+      { returnDocument: 'after', projection: { password_hash: 0, _deleted: 0 } }
+    )
   }
 
   async restore(id, newData) {
@@ -67,30 +79,23 @@ class ReaderRepository {
         $set: {
           ...newData,
           _deleted: false,
+          status: 'ACTIVE',
           updated_at: new Date()
         }
       },
-      { returnDocument: 'after', projection: { _deleted: 0 } }
-    )
-  }
-
-  async update(id, updateData) {
-    if (!ObjectId.isValid(id)) return null
-    return await this.getCollection().findOneAndUpdate(
-      { _id: new ObjectId(id), _deleted: false },
-      { $set: { ...updateData, updated_at: new Date() } },
-      { returnDocument: 'after', projection: { _deleted: 0 } }
+      { returnDocument: 'after', projection: { password_hash: 0, _deleted: 0 } }
     )
   }
 
   async delete(id) {
     if (!ObjectId.isValid(id)) return false
+
     const result = await this.getCollection().updateOne(
       { _id: new ObjectId(id), _deleted: false },
       {
         $set: {
           _deleted: true,
-          'card.status': 'LOCKED',
+          status: 'LOCKED',
           updated_at: new Date()
         }
       }
@@ -98,21 +103,15 @@ class ReaderRepository {
     return result.modifiedCount > 0
   }
 
-  async deleteByUserId(userId) {
-    if (!ObjectId.isValid(userId)) return false
+  // Xóa cứng
+  async deleteForce(id) {
+    if (!ObjectId.isValid(id)) return false
 
-    const result = await this.getCollection().updateOne(
-      { user_id: new ObjectId(userId), _deleted: false },
-      {
-        $set: {
-          _deleted: true,
-          'card.status': 'LOCKED',
-          updated_at: new Date()
-        }
-      }
-    )
-    return result.modifiedCount > 0
+    const result = await this.getCollection().deleteOne({
+      _id: new ObjectId(id)
+    })
+    return result.deletedCount > 0
   }
 }
 
-export default new ReaderRepository()
+export default new UserRepository()

@@ -1,5 +1,5 @@
-import bookCopyRepo from '~/repositories/bookCopy.repo.js'
 import bookRepo from '~/repositories/book.repo.js'
+import bookCopyRepo from '~/repositories/bookCopy.repo.js'
 
 class BookCopyService {
   async addCopy(bookId, data) {

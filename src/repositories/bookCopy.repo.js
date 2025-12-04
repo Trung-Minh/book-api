@@ -1,5 +1,6 @@
-import { getDB } from '~/config/db.js'
 import { ObjectId } from 'mongodb'
+
+import { getDB } from '~/config/db.js'
 
 const COLLECTION_NAME = 'book_copies'
 
